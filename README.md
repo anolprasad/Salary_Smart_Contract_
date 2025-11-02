@@ -1,7 +1,9 @@
 # Decentralized Salary System - Soroban Smart Contract
 
 > ✅ **DEPLOYED & VERIFIED** on Stellar Testnet  
-> Contract ID: `CDXYPMRADZYRBUI2GNYICZBS7H6GJLX7BI3DI4HCUG2YISRR3NTLL4R4`  
+> Contract ID: `CDXYPMRADZYRBUI2GNYICZBS7H6GJLX7BI3DI4HCUG2YISRR3NTLL4R4`
+> <img width="2882" height="1476" alt="image" src="https://github.com/user-attachments/assets/757cb759-9c0d-4f07-9ba8-c0d942648563" />
+
 > [View on Stellar Expert →](https://stellar.expert/explorer/testnet/contract/CDXYPMRADZYRBUI2GNYICZBS7H6GJLX7BI3DI4HCUG2YISRR3NTLL4R4)
 
 A complete decentralized salary management system built on Stellar's Soroban platform with monthly payments, annual increments, treasury management, and employee self-service withdrawals.
