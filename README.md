@@ -1,6 +1,11 @@
 # Decentralized Salary System - Soroban Smart Contract
 
-A complete decentralized salary management system built on Stellar's Soroban platform with monthly payments, annual increments, treasury management, and sustainability calculations.
+> ✅ **DEPLOYED & VERIFIED** on Stellar Testnet  
+> Contract ID: `CDXYPMRADZYRBUI2GNYICZBS7H6GJLX7BI3DI4HCUG2YISRR3NTLL4R4`  
+> [View on Stellar Expert →](https://stellar.expert/explorer/testnet/contract/CDXYPMRADZYRBUI2GNYICZBS7H6GJLX7BI3DI4HCUG2YISRR3NTLL4R4)
+
+A complete decentralized salary management system built on Stellar's Soroban platform with monthly payments, annual increments, treasury management, and employee self-service withdrawals.
+
 ## Instructions are there in the html file
 ## 🌟 Features
 
@@ -72,14 +77,34 @@ stellar contract invoke \
 ./check_sustainability.sh
 ```
 
-## 📊 Current Status
+## 📊 Current Deployment Status
 
+### 🔗 Contract Information
 - **Contract ID**: `CDXYPMRADZYRBUI2GNYICZBS7H6GJLX7BI3DI4HCUG2YISRR3NTLL4R4`
 - **Network**: Stellar Testnet
-- **Admin**: alice
-- **Employees**: 3 active
-- **Treasury**: 296 XLM
-- **Sustainability**: 3 years (with 5% annual compound increments)
+- **Stellar Expert**: [View Contract](https://stellar.expert/explorer/testnet/contract/CDXYPMRADZYRBUI2GNYICZBS7H6GJLX7BI3DI4HCUG2YISRR3NTLL4R4)
+- **Deployed**: 2025-11-02 07:05:48 UTC
+- **Contract Type**: WASM contract
+- **Contract Hash**: `159cba34...b17fc924`
+
+### 👨‍💼 Admin Account
+- **Admin Address**: `GBPAKDYZKKXENIPOXGYCB2ZEVRQKK2JEBLPJ3CHK7MRMBZLHNPTGJAZE` (alice)
+- **View on Explorer**: [Alice's Account](https://stellar.expert/explorer/testnet/account/GBPAKDYZKKXENIPOXGYCB2ZEVRQKK2JEBLPJ3CHK7MRMBZLHNPTGJAZE)
+
+### 💰 Current State
+- **Employees**: 6 registered
+- **Treasury Balance**: 297 XLM
+- **Contract Invocations**: Active (visible on blockchain)
+- **Payments**: 3 transactions recorded
+- **Data Storage**: 1 entry
+
+### 🎯 Key Features Live
+✅ Monthly salary payments  
+✅ Employee self-service withdrawals (`claim_salary`)  
+✅ Annual 5% compound increments  
+✅ Treasury sustainability tracking  
+✅ Multi-employee management  
+✅ Web interface with Freighter integration
 
 ## 📖 Documentation
 
