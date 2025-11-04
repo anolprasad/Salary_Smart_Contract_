@@ -1,0 +1,25 @@
+{
+  "name": "salary-smart-contract-backend",
+  "version": "1.0.0",
+  "description": "Backend server for Soroban Salary Smart Contract",
+  "main": "backend_server.js",
+  "scripts": {
+    "start": "node backend_server.js",
+    "dev": "nodemon backend_server.js"
+  },
+  "keywords": [
+    "stellar",
+    "soroban",
+    "smart-contract",
+    "blockchain"
+  ],
+  "author": "anolprasad",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

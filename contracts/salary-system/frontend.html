@@ -535,27 +535,66 @@ stellar contract invoke \
             </div>
 
             <div style="margin-top: 30px; padding: 20px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0ea5e9;">
-                <h3 style="color: #0369a1; margin-bottom: 15px;">➕ Add New Employee</h3>
+                <h3 style="color: #0369a1; margin-bottom: 15px;">➕ Add New Employee (Live)</h3>
                 <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">
-                    Use the CLI command below or the script to add employees:
+                    Add employees directly to the blockchain via backend server:
                 </p>
-                <div class="code-box" style="background: #1f2937; color: #10b981; margin-bottom: 10px;">
-# Easy way - Use the script:
-./add_employee.sh employee_name annual_salary_xlm
-
-# Example: Add employee with 120 XLM/year (10 XLM/month)
-./add_employee.sh john 120
+                
+                <div id="addEmployeeAlert" style="display: none; padding: 10px; margin-bottom: 15px; border-radius: 8px;"></div>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div class="form-group">
+                        <label for="empName">Employee Name *</label>
+                        <input type="text" id="empName" placeholder="e.g., john_doe" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="empAddress">Stellar Address *</label>
+                        <input type="text" id="empAddress" placeholder="Starts with G... (56 characters)" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+                        <small style="color: #666;">Must be a valid Stellar testnet address</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="empSalary">Monthly Salary (XLM) *</label>
+                        <input type="number" id="empSalary" placeholder="e.g., 10" min="0.1" step="0.1" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+                        <small style="color: #666;">Monthly salary in XLM (e.g., 10 XLM/month)</small>
+                    </div>
+                    
+                    <button onclick="addEmployeeToBlockchain()" id="addEmpBtn" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 1.1em; font-weight: 600; cursor: pointer;">
+                        ➕ Add Employee to Blockchain
+                    </button>
+                    
+                    <div id="addEmployeeStatus" style="margin-top: 15px; padding: 10px; display: none; border-radius: 8px;"></div>
                 </div>
-                <div class="code-box" style="background: #1f2937; color: #10b981;">
-# Manual way - Using CLI:
-stellar contract invoke \
-  --id salary_system \
-  --source-account alice \
-  --network testnet \
-  -- add_employee \
-  --employee_address EMPLOYEE_ADDRESS \
-  --name "Employee Name" \
-  --base_salary 120000000
+            </div>
+
+            <!-- Stop/Resume Employee Salary -->
+            <div style="margin-top: 30px; padding: 20px; background: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444;">
+                <h3 style="color: #991b1b; margin-bottom: 15px;">⚙️ Manage Employee Salary (Admin Only)</h3>
+                <p style="color: #7f1d1d; font-size: 0.9em; margin-bottom: 15px;">
+                    Stop or resume salary payments for an employee:
+                </p>
+                
+                <div id="manageSalaryAlert" style="display: none; padding: 10px; margin-bottom: 15px; border-radius: 8px;"></div>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div class="form-group">
+                        <label for="manageEmpAddress">Employee Stellar Address *</label>
+                        <input type="text" id="manageEmpAddress" placeholder="Starts with G... (56 characters)" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+                        <small style="color: #666;">The employee whose salary you want to manage</small>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button onclick="stopEmployeeSalary()" id="stopSalaryBtn" style="padding: 15px; background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%); color: white; border: none; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer;">
+                            ⏸️ Stop Salary
+                        </button>
+                        
+                        <button onclick="resumeEmployeeSalary()" id="resumeSalaryBtn" style="padding: 15px; background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: white; border: none; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer;">
+                            ▶️ Resume Salary
+                        </button>
+                    </div>
+                    
+                    <div id="manageSalaryStatus" style="margin-top: 15px; padding: 10px; display: none; border-radius: 8px;"></div>
                 </div>
             </div>
         </div>
@@ -564,13 +603,30 @@ stellar contract invoke \
         <div class="card">
             <h2>💰 Salary Operations</h2>
             
-            <div style="margin-bottom: 30px;">
-                <h3 style="color: #667eea; margin-bottom: 15px;">Pay All Employees</h3>
-                <p style="color: #666; margin-bottom: 10px;">
-                    Pay monthly salaries to all active employees at once:
+            <div style="margin-bottom: 30px; padding: 20px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                <h3 style="color: #92400e; margin-bottom: 15px;">💸 Pay All Employees (Admin Only)</h3>
+                <p style="color: #78350f; margin-bottom: 15px; font-weight: 500;">
+                    ⚠️ This will pay monthly salaries to ALL active employees at once!
                 </p>
-                <div class="code-box" style="background: #1f2937; color: #10b981;">
-./pay_all_salaries.sh
+                
+                <div id="payAllAlert" style="display: none; padding: 10px; margin-bottom: 15px; border-radius: 8px;"></div>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="margin-bottom: 15px; padding: 15px; background: #fef3c7; border-radius: 8px;">
+                        <p style="margin: 0; color: #92400e; font-size: 0.95em;">
+                            <strong>📋 This action will:</strong><br>
+                            • Get all registered employees<br>
+                            • Pay each employee their monthly salary<br>
+                            • Deduct from treasury automatically<br>
+                            • Show detailed results for each payment
+                        </p>
+                    </div>
+                    
+                    <button onclick="payAllEmployees()" id="payAllBtn" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #f59e0b 0%, #dc2626 100%); color: white; border: none; border-radius: 8px; font-size: 1.1em; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                        💸 Pay All Employees Now
+                    </button>
+                    
+                    <div id="payAllStatus" style="margin-top: 15px; padding: 10px; display: none; border-radius: 8px; max-height: 400px; overflow-y: auto;"></div>
                 </div>
             </div>
 
@@ -589,20 +645,26 @@ stellar contract invoke \
                 </div>
             </div>
 
-            <div>
-                <h3 style="color: #667eea; margin-bottom: 15px;">Fund Treasury</h3>
-                <p style="color: #666; margin-bottom: 10px;">
-                    Add XLM to the contract treasury for payroll:
+            <div style="margin-bottom: 30px; padding: 20px; background: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                <h3 style="color: #1e40af; margin-bottom: 15px;">💰 Fund Treasury (Admin Only)</h3>
+                <p style="color: #1e3a8a; margin-bottom: 15px;">
+                    Add XLM to the contract treasury to ensure payroll funds:
                 </p>
-                <div class="code-box" style="background: #1f2937; color: #10b981;">
-# Fund with 500 XLM
-stellar contract invoke \
-  --id salary_system \
-  --source-account alice \
-  --network testnet \
-  -- fund_treasury \
-  --from $(stellar keys address alice) \
-  --amount 50000000000
+                
+                <div id="fundTreasuryAlert" style="display: none; padding: 10px; margin-bottom: 15px; border-radius: 8px;"></div>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div class="form-group">
+                        <label for="fundAmount">Amount (XLM) *</label>
+                        <input type="number" id="fundAmount" placeholder="e.g., 100" min="0.1" step="0.1" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+                        <small style="color: #666;">Amount to add to treasury in XLM</small>
+                    </div>
+                    
+                    <button onclick="fundTreasury()" id="fundTreasuryBtn" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; border: none; border-radius: 8px; font-size: 1.1em; font-weight: 600; cursor: pointer;">
+                        💰 Fund Treasury
+                    </button>
+                    
+                    <div id="fundTreasuryStatus" style="margin-top: 15px; padding: 10px; display: none; border-radius: 8px;"></div>
                 </div>
             </div>
         </div>
@@ -635,28 +697,42 @@ stellar contract invoke \
                 </div>
             </div>
 
-            <div style="margin-bottom: 30px;">
-                <h3 style="color: #059669; margin-bottom: 15px;">💰 Claim Your Salary</h3>
-                <p style="color: #666; margin-bottom: 15px;">
-                    Use the script to easily claim your monthly salary:
+            <div style="margin-bottom: 30px; padding: 20px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid #10b981;">
+                <h3 style="color: #059669; margin-bottom: 15px;">💰 Claim Your Salary (Live!)</h3>
+                <p style="color: #047857; margin-bottom: 15px; font-weight: 500;">
+                    <strong>✨ NEW!</strong> Employees can now claim their salary directly from the browser!
                 </p>
-                <div class="code-box" style="background: #1f2937; color: #10b981; margin-bottom: 10px;">
-# Claim your salary (replace with your employee name)
-./claim_my_salary.sh employee1
-./claim_my_salary.sh employee2
-./claim_my_salary.sh employee3
-                </div>
                 
-                <p style="color: #666; margin-top: 15px; margin-bottom: 10px;">
-                    Or use the CLI command directly:
-                </p>
-                <div class="code-box" style="background: #1f2937; color: #10b981;">
-stellar contract invoke \
-  --id salary_system \
-  --source-account employee1 \
-  --network testnet \
-  -- claim_salary \
-  --employee_address $(stellar keys address employee1)
+                <div id="claimSalaryAlert" style="display: none; padding: 10px; margin-bottom: 15px; border-radius: 8px;"></div>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="margin-bottom: 15px; padding: 15px; background: #ecfdf5; border-radius: 8px;">
+                        <p style="margin: 0; color: #047857; font-size: 0.95em;">
+                            <strong>📋 Before claiming:</strong><br>
+                            • Make sure you are a registered employee<br>
+                            • You haven't claimed this month yet<br>
+                            • Treasury has sufficient funds<br>
+                            • Enter your employee name (optional) for better tracking
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="claimEmpName">Your Name (Optional)</label>
+                        <input type="text" id="claimEmpName" placeholder="e.g., john_doe" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+                        <small style="color: #666;">For display purposes only</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="claimEmpAddress">Your Stellar Address *</label>
+                        <input type="text" id="claimEmpAddress" placeholder="Starts with G... (56 characters)" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+                        <small style="color: #666;">The address where you receive your salary</small>
+                    </div>
+                    
+                    <button onclick="claimMySalary()" id="claimSalaryBtn" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: white; border: none; border-radius: 8px; font-size: 1.1em; font-weight: 600; cursor: pointer;">
+                        💰 Claim My Salary Now
+                    </button>
+                    
+                    <div id="claimSalaryStatus" style="margin-top: 15px; padding: 10px; display: none; border-radius: 8px;"></div>
                 </div>
             </div>
 
@@ -715,11 +791,12 @@ stellar contract invoke \
             <div style="padding: 20px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
                 <h3 style="color: #1e40af; margin-bottom: 15px;">📚 Learn More</h3>
                 <p style="color: #666; margin-bottom: 10px;">
-                    For detailed documentation, see:
+                    📚 For complete documentation of all features:
                 </p>
                 <ul style="margin-left: 20px; color: #1e40af;">
-                    <li><code>EMPLOYEE_SELF_SERVICE.md</code> - Complete guide</li>
-                    <li><code>claim_my_salary.sh</code> - Ready-to-use script</li>
+                    <li><code>FEATURES_GUIDE.md</code> - Complete guide for all 6 features (Admin + Employee)</li>
+                    <li>Includes: Add Employee, Pay All, Fund Treasury, Stop/Resume Salary, Claim Salary</li>
+                    <li>Also includes: API documentation, troubleshooting, and best practices</li>
                 </ul>
             </div>
         </div>
@@ -768,8 +845,8 @@ stellar contract invoke \
   --employee_address $(stellar keys address employee1)
             </div>
 
-            <div style="margin-top: 20px; padding: 15px; background: #dbeafe; border-radius: 8px;">
-                <strong>💡 Tip:</strong> Run <code style="background: white; padding: 2px 6px; border-radius: 4px;">./test_real_transfer.sh</code> in your project folder to test everything automatically!
+            <div style="margin-top: 20px; padding: 15px; background: #d1fae5; border-radius: 8px; border: 2px solid #10b981;">
+                <strong>💡 Better Way:</strong> Use the <strong>"Claim My Salary"</strong> button above instead! No terminal commands needed - just enter your address and click the button. 🎉
             </div>
         </div>
 
@@ -1310,6 +1387,637 @@ stellar contract invoke \
             }
             
             return 'Just now';
+        }
+
+        // Add Employee to Blockchain via Backend
+        async function addEmployeeToBlockchain() {
+            const btn = document.getElementById('addEmpBtn');
+            const statusEl = document.getElementById('addEmployeeStatus');
+            const alertEl = document.getElementById('addEmployeeAlert');
+            
+            // Get form values
+            const name = document.getElementById('empName').value.trim();
+            const address = document.getElementById('empAddress').value.trim();
+            const monthlyXLM = parseFloat(document.getElementById('empSalary').value);
+            
+            // Hide previous alerts
+            alertEl.style.display = 'none';
+            statusEl.style.display = 'none';
+            
+            // Validation
+            if (!name || !address || !monthlyXLM) {
+                alertEl.textContent = '❌ Please fill in all fields!';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.style.display = 'block';
+                return;
+            }
+            
+            if (!address.startsWith('G') || address.length !== 56) {
+                alertEl.textContent = '❌ Invalid Stellar address! Must start with G and be 56 characters.';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.style.display = 'block';
+                return;
+            }
+            
+            if (monthlyXLM <= 0 || isNaN(monthlyXLM)) {
+                alertEl.textContent = '❌ Salary must be a positive number!';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.style.display = 'block';
+                return;
+            }
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Adding to blockchain...';
+            
+            statusEl.textContent = '⏳ Sending transaction to blockchain...';
+            statusEl.style.background = '#fef3c7';
+            statusEl.style.color = '#92400e';
+            statusEl.style.display = 'block';
+            
+            try {
+                // Call backend API
+                const response = await fetch('http://localhost:3000/api/add-employee', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        address: address,
+                        monthlyXLM: monthlyXLM
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Success!
+                    statusEl.textContent = `✅ Success! ${name} has been added to the blockchain!`;
+                    statusEl.style.background = '#d1fae5';
+                    statusEl.style.color = '#065f46';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('success', `Employee ${name} added successfully with ${monthlyXLM} XLM/month salary!`);
+                    
+                    // Clear form
+                    document.getElementById('empName').value = '';
+                    document.getElementById('empAddress').value = '';
+                    document.getElementById('empSalary').value = '';
+                    
+                    // Refresh employee list after 2 seconds
+                    setTimeout(() => {
+                        loadEmployees();
+                    }, 2000);
+                    
+                } else {
+                    // Error from backend
+                    statusEl.textContent = `❌ Error: ${result.message || result.error}`;
+                    statusEl.style.background = '#fee2e2';
+                    statusEl.style.color = '#991b1b';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('error', result.message || 'Failed to add employee');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusEl.textContent = `❌ Connection Error: ${error.message}. Make sure the backend server is running!`;
+                statusEl.style.background = '#fee2e2';
+                statusEl.style.color = '#991b1b';
+                statusEl.style.display = 'block';
+                
+                showAlert('error', 'Backend server not running! Start it with: node backend_server.js');
+            } finally {
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = '➕ Add Employee to Blockchain';
+            }
+        }
+
+        // Pay All Employees
+        async function payAllEmployees() {
+            const btn = document.getElementById('payAllBtn');
+            const statusEl = document.getElementById('payAllStatus');
+            const alertEl = document.getElementById('payAllAlert');
+            
+            // Hide previous alerts
+            alertEl.style.display = 'none';
+            statusEl.style.display = 'none';
+            
+            // Confirm action
+            const confirmed = confirm(
+                '⚠️ WARNING: This will pay ALL employees!\n\n' +
+                'Are you sure you want to proceed?\n\n' +
+                '• This will deduct funds from the treasury\n' +
+                '• Each employee will receive their monthly salary\n' +
+                '• This action cannot be undone'
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Processing payments...';
+            
+            statusEl.innerHTML = '<p style="text-align: center; color: #92400e; padding: 20px;">⏳ Fetching employees and processing payments...<br><small>This may take a few moments</small></p>';
+            statusEl.style.background = '#fef3c7';
+            statusEl.style.display = 'block';
+            
+            try {
+                // Call backend API
+                const response = await fetch('http://localhost:3000/api/pay-all-salaries', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Success!
+                    let html = '<div style="background: #d1fae5; padding: 15px; border-radius: 8px; margin-bottom: 10px;">';
+                    html += `<h4 style="color: #065f46; margin: 0 0 10px 0;">✅ ${result.message}</h4>`;
+                    html += `<p style="color: #047857; margin: 0;"><strong>Summary:</strong></p>`;
+                    html += `<ul style="color: #047857; margin: 10px 0 0 20px;">`;
+                    html += `<li>Total Employees: ${result.summary.total}</li>`;
+                    html += `<li>Successful Payments: ${result.summary.successful}</li>`;
+                    html += `<li>Failed Payments: ${result.summary.failed}</li>`;
+                    html += `</ul></div>`;
+                    
+                    // Show detailed results
+                    if (result.details && result.details.length > 0) {
+                        html += '<div style="margin-top: 15px;"><h4 style="color: #667eea; margin-bottom: 10px;">Payment Details:</h4>';
+                        
+                        for (const detail of result.details) {
+                            const bgColor = detail.status === 'success' ? '#d1fae5' : '#fee2e2';
+                            const textColor = detail.status === 'success' ? '#065f46' : '#991b1b';
+                            const icon = detail.status === 'success' ? '✅' : '❌';
+                            
+                            html += `<div style="background: ${bgColor}; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 0.9em;">`;
+                            html += `<p style="color: ${textColor}; margin: 0;">${icon} <strong>${detail.address.substring(0, 15)}...${detail.address.substring(50)}</strong></p>`;
+                            if (detail.error) {
+                                html += `<p style="color: ${textColor}; margin: 5px 0 0 0; font-size: 0.85em;">${detail.error}</p>`;
+                            }
+                            html += `</div>`;
+                        }
+                        html += '</div>';
+                    }
+                    
+                    statusEl.innerHTML = html;
+                    statusEl.style.background = 'white';
+                    statusEl.style.border = '2px solid #10b981';
+                    
+                    showAlert('success', `Successfully paid ${result.summary.successful} employees!`);
+                    
+                    // Refresh treasury info after 3 seconds
+                    setTimeout(() => {
+                        loadTreasuryInfo();
+                        loadEmployees();
+                    }, 3000);
+                    
+                } else {
+                    // Error from backend
+                    statusEl.innerHTML = `<div style="background: #fee2e2; padding: 15px; border-radius: 8px;"><p style="color: #991b1b; margin: 0;"><strong>❌ Error:</strong> ${result.message || result.error}</p></div>`;
+                    statusEl.style.background = 'white';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('error', result.message || 'Failed to pay employees');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusEl.innerHTML = `<div style="background: #fee2e2; padding: 15px; border-radius: 8px;"><p style="color: #991b1b; margin: 0;"><strong>❌ Connection Error:</strong> ${error.message}<br><small>Make sure the backend server is running!</small></p></div>`;
+                statusEl.style.background = 'white';
+                statusEl.style.display = 'block';
+                
+                showAlert('error', 'Backend server not running! Start it with: node backend_server.js');
+            } finally {
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = '💸 Pay All Employees Now';
+            }
+        }
+
+        // Fund Treasury
+        async function fundTreasury() {
+            const btn = document.getElementById('fundTreasuryBtn');
+            const statusEl = document.getElementById('fundTreasuryStatus');
+            const alertEl = document.getElementById('fundTreasuryAlert');
+            
+            // Get form value
+            const amountXLM = parseFloat(document.getElementById('fundAmount').value);
+            
+            // Hide previous alerts
+            alertEl.style.display = 'none';
+            statusEl.style.display = 'none';
+            
+            // Validation
+            if (!amountXLM || amountXLM <= 0 || isNaN(amountXLM)) {
+                alertEl.textContent = '❌ Please enter a valid amount greater than 0!';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.style.display = 'block';
+                return;
+            }
+            
+            // Confirm action
+            const confirmed = confirm(
+                `💰 Fund Treasury\n\n` +
+                `You are about to add ${amountXLM} XLM to the treasury.\n\n` +
+                `Are you sure you want to proceed?`
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Processing...';
+            
+            statusEl.textContent = '⏳ Funding treasury...';
+            statusEl.style.background = '#fef3c7';
+            statusEl.style.color = '#92400e';
+            statusEl.style.display = 'block';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/fund-treasury', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ amountXLM: amountXLM })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusEl.textContent = `✅ Success! Treasury funded with ${amountXLM} XLM!`;
+                    statusEl.style.background = '#d1fae5';
+                    statusEl.style.color = '#065f46';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('success', `Treasury funded with ${amountXLM} XLM!`);
+                    
+                    // Clear form
+                    document.getElementById('fundAmount').value = '';
+                    
+                    // Refresh treasury after 2 seconds
+                    setTimeout(() => {
+                        loadTreasuryInfo();
+                    }, 2000);
+                    
+                } else {
+                    statusEl.textContent = `❌ Error: ${result.message || result.error}`;
+                    statusEl.style.background = '#fee2e2';
+                    statusEl.style.color = '#991b1b';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('error', result.message || 'Failed to fund treasury');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusEl.textContent = `❌ Connection Error: ${error.message}. Make sure the backend server is running!`;
+                statusEl.style.background = '#fee2e2';
+                statusEl.style.color = '#991b1b';
+                statusEl.style.display = 'block';
+                
+                showAlert('error', 'Backend server not running!');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '💰 Fund Treasury';
+            }
+        }
+
+        // Stop Employee Salary
+        async function stopEmployeeSalary() {
+            const btn = document.getElementById('stopSalaryBtn');
+            const statusEl = document.getElementById('manageSalaryStatus');
+            const alertEl = document.getElementById('manageSalaryAlert');
+            
+            const address = document.getElementById('manageEmpAddress').value.trim();
+            
+            // Hide previous alerts
+            alertEl.style.display = 'none';
+            statusEl.style.display = 'none';
+            
+            // Validation
+            if (!address) {
+                alertEl.textContent = '❌ Please enter an employee address!';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.style.display = 'block';
+                return;
+            }
+            
+            if (!address.startsWith('G') || address.length !== 56) {
+                alertEl.textContent = '❌ Invalid Stellar address! Must start with G and be 56 characters.';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.style.display = 'block';
+                return;
+            }
+            
+            // Confirm action
+            const confirmed = confirm(
+                `⏸️ Stop Salary\n\n` +
+                `You are about to STOP salary for:\n${address}\n\n` +
+                `The employee will not receive future payments until you resume.\n\n` +
+                `Are you sure?`
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Stopping...';
+            
+            statusEl.textContent = '⏳ Stopping salary...';
+            statusEl.style.background = '#fef3c7';
+            statusEl.style.color = '#92400e';
+            statusEl.style.display = 'block';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/stop-employee-salary', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ employeeAddress: address })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusEl.textContent = `✅ Salary stopped for ${address.substring(0, 15)}...`;
+                    statusEl.style.background = '#d1fae5';
+                    statusEl.style.color = '#065f46';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('success', 'Employee salary stopped successfully!');
+                    
+                    // Clear form
+                    document.getElementById('manageEmpAddress').value = '';
+                    
+                } else {
+                    statusEl.textContent = `❌ Error: ${result.message || result.error}`;
+                    statusEl.style.background = '#fee2e2';
+                    statusEl.style.color = '#991b1b';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('error', result.message || 'Failed to stop salary');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusEl.textContent = `❌ Connection Error: ${error.message}. Make sure the backend server is running!`;
+                statusEl.style.background = '#fee2e2';
+                statusEl.style.color = '#991b1b';
+                statusEl.style.display = 'block';
+                
+                showAlert('error', 'Backend server not running!');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '⏸️ Stop Salary';
+            }
+        }
+
+        // Resume Employee Salary
+        async function resumeEmployeeSalary() {
+            const btn = document.getElementById('resumeSalaryBtn');
+            const statusEl = document.getElementById('manageSalaryStatus');
+            const alertEl = document.getElementById('manageSalaryAlert');
+            
+            const address = document.getElementById('manageEmpAddress').value.trim();
+            
+            // Hide previous alerts
+            alertEl.style.display = 'none';
+            statusEl.style.display = 'none';
+            
+            // Validation
+            if (!address) {
+                alertEl.textContent = '❌ Please enter an employee address!';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.style.display = 'block';
+                return;
+            }
+            
+            if (!address.startsWith('G') || address.length !== 56) {
+                alertEl.textContent = '❌ Invalid Stellar address! Must start with G and be 56 characters.';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.style.display = 'block';
+                return;
+            }
+            
+            // Confirm action
+            const confirmed = confirm(
+                `▶️ Resume Salary\n\n` +
+                `You are about to RESUME salary for:\n${address}\n\n` +
+                `The employee will receive future salary payments again.\n\n` +
+                `Are you sure?`
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Resuming...';
+            
+            statusEl.textContent = '⏳ Resuming salary...';
+            statusEl.style.background = '#fef3c7';
+            statusEl.style.color = '#92400e';
+            statusEl.style.display = 'block';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/resume-employee-salary', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ employeeAddress: address })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusEl.textContent = `✅ Salary resumed for ${address.substring(0, 15)}...`;
+                    statusEl.style.background = '#d1fae5';
+                    statusEl.style.color = '#065f46';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('success', 'Employee salary resumed successfully!');
+                    
+                    // Clear form
+                    document.getElementById('manageEmpAddress').value = '';
+                    
+                } else {
+                    statusEl.textContent = `❌ Error: ${result.message || result.error}`;
+                    statusEl.style.background = '#fee2e2';
+                    statusEl.style.color = '#991b1b';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('error', result.message || 'Failed to resume salary');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusEl.textContent = `❌ Connection Error: ${error.message}. Make sure the backend server is running!`;
+                statusEl.style.background = '#fee2e2';
+                statusEl.style.color = '#991b1b';
+                statusEl.style.display = 'block';
+                
+                showAlert('error', 'Backend server not running!');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '▶️ Resume Salary';
+            }
+        }
+
+        // Claim My Salary (Employee Self-Service)
+        async function claimMySalary() {
+            const btn = document.getElementById('claimSalaryBtn');
+            const statusEl = document.getElementById('claimSalaryStatus');
+            const alertEl = document.getElementById('claimSalaryAlert');
+            
+            // Get form values
+            const name = document.getElementById('claimEmpName').value.trim();
+            const address = document.getElementById('claimEmpAddress').value.trim();
+            
+            // Hide previous alerts
+            alertEl.style.display = 'none';
+            statusEl.style.display = 'none';
+            
+            // Validation
+            if (!address) {
+                alertEl.textContent = '❌ Please enter your Stellar address!';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.style.display = 'block';
+                return;
+            }
+            
+            if (!address.startsWith('G') || address.length !== 56) {
+                alertEl.textContent = '❌ Invalid Stellar address! Must start with G and be 56 characters.';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.style.display = 'block';
+                return;
+            }
+            
+            // Confirm action
+            const confirmed = confirm(
+                `💰 Claim Your Salary\n\n` +
+                `You are about to claim your monthly salary.\n\n` +
+                `Employee: ${name || 'Unknown'}\n` +
+                `Address: ${address.substring(0, 15)}...${address.substring(50)}\n\n` +
+                `⚠️ Note: You can only claim once per month!\n\n` +
+                `Proceed with claiming?`
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Claiming salary...';
+            
+            statusEl.innerHTML = '<p style="text-align: center; color: #047857; padding: 10px;">⏳ Processing your claim...<br><small>Checking eligibility and transferring funds...</small></p>';
+            statusEl.style.background = '#ecfdf5';
+            statusEl.style.display = 'block';
+            
+            try {
+                // Call backend API
+                const response = await fetch('http://localhost:3000/api/claim-salary', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        employeeAddress: address,
+                        employeeName: name || 'Anonymous'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Success!
+                    let html = '<div style="background: #d1fae5; padding: 15px; border-radius: 8px;">';
+                    html += `<h4 style="color: #065f46; margin: 0 0 10px 0;">✅ ${result.message}</h4>`;
+                    html += `<p style="color: #047857; margin: 0;"><strong>Employee:</strong> ${result.data.employeeName}</p>`;
+                    html += `<p style="color: #047857; margin: 5px 0 0 0;"><strong>Address:</strong> ${result.data.employeeAddress.substring(0, 20)}...</p>`;
+                    if (result.note) {
+                        html += `<p style="color: #047857; margin: 10px 0 0 0; font-weight: 600;">💰 ${result.note}</p>`;
+                    }
+                    html += '</div>';
+                    
+                    statusEl.innerHTML = html;
+                    statusEl.style.background = 'white';
+                    statusEl.style.border = '2px solid #10b981';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('success', `Salary claimed successfully! Check your account.`);
+                    
+                    // Clear form
+                    document.getElementById('claimEmpName').value = '';
+                    document.getElementById('claimEmpAddress').value = '';
+                    
+                    // Refresh treasury info after 3 seconds
+                    setTimeout(() => {
+                        loadTreasuryInfo();
+                    }, 3000);
+                    
+                } else {
+                    // Error from backend
+                    let html = '<div style="background: #fee2e2; padding: 15px; border-radius: 8px;">';
+                    html += `<p style="color: #991b1b; margin: 0;"><strong>❌ ${result.error}</strong></p>`;
+                    html += `<p style="color: #991b1b; margin: 10px 0 0 0;">${result.message}</p>`;
+                    if (result.note) {
+                        html += `<p style="color: #991b1b; margin: 10px 0 0 0; font-size: 0.9em;">${result.note}</p>`;
+                    }
+                    html += '</div>';
+                    
+                    statusEl.innerHTML = html;
+                    statusEl.style.background = 'white';
+                    statusEl.style.display = 'block';
+                    
+                    showAlert('error', result.message || 'Failed to claim salary');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                
+                let html = '<div style="background: #fee2e2; padding: 15px; border-radius: 8px;">';
+                html += `<p style="color: #991b1b; margin: 0;"><strong>❌ Connection Error</strong></p>`;
+                html += `<p style="color: #991b1b; margin: 10px 0 0 0;">${error.message}</p>`;
+                html += `<p style="color: #991b1b; margin: 10px 0 0 0; font-size: 0.9em;">Make sure the backend server is running!</p>`;
+                html += '</div>';
+                
+                statusEl.innerHTML = html;
+                statusEl.style.background = 'white';
+                statusEl.style.display = 'block';
+                
+                showAlert('error', 'Backend server not running! Start it with: node backend_server.js');
+            } finally {
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = '💰 Claim My Salary Now';
+            }
         }
 
         // Check for Freighter on load
