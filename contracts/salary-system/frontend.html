@@ -1009,9 +1009,13 @@ stellar contract invoke \
                     return;
                 }
 
-                // Fetch details for each employee
+                // Remove duplicates - keep only unique addresses
+                const uniqueAddresses = [...new Set(employeeAddresses)];
+                console.log(`Total employees: ${employeeAddresses.length}, Unique: ${uniqueAddresses.length}`);
+
+                // Fetch details for each unique employee
                 const employeeDetails = await Promise.all(
-                    employeeAddresses.map(async (address) => {
+                    uniqueAddresses.map(async (address) => {
                         try {
                             const detailResponse = await fetch(`http://localhost:3000/api/employee/${address}`);
                             const detailData = await detailResponse.json();
@@ -1023,8 +1027,8 @@ stellar contract invoke \
                     })
                 );
 
-                // Filter out nulls
-                const employees = employeeDetails.filter(e => e !== null);
+                // Filter out nulls and inactive employees
+                const employees = employeeDetails.filter(e => e !== null && e.is_active);
 
                 // Display employees
                 let totalMonthly = 0;
