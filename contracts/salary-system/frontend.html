@@ -989,47 +989,57 @@ stellar contract invoke \
             
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Loading...';
-            listEl.innerHTML = '<p style="text-align: center; color: #888;">Fetching employees from contract...</p>';
+            listEl.innerHTML = '<p style="text-align: center; color: #888;">Fetching employees from blockchain...</p>';
 
             try {
-                showAlert('info', 'Use CLI to get employee list: stellar contract invoke --id salary_system --source-account alice --network testnet -- get_all_employees');
+                // Fetch employees from backend API
+                const response = await fetch('http://localhost:3000/api/employees');
+                const data = await response.json();
                 
-                // Hardcoded current employees for demonstration
-                const employees = [
-                    {
-                        name: 'employee1',
-                        address: 'GCBGNIA2KZ5C5Q3X737DEPBOUB56F5VRVSRBW5YX6CR6UH5KTYIYOYVA',
-                        annualSalary: 12,
-                        monthlySalary: 1
-                    },
-                    {
-                        name: 'employee2',
-                        address: 'GCBDACPLLDVEC67IO6V7DCOVZFUH4DP5UTSO5CPHIB46F4VRN7PWGAT3',
-                        annualSalary: 24,
-                        monthlySalary: 2
-                    },
-                    {
-                        name: 'employee3',
-                        address: 'GBXCEWXR6J4DRLYCWCUBHBSKBFOQ3T4AJM5MXKCE6V3TAUJNBG6LDTNP',
-                        annualSalary: 36,
-                        monthlySalary: 3
-                    }
-                ];
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch employees');
+                }
 
-                if (employees.length === 0) {
-                    listEl.innerHTML = '<p style="text-align: center; color: #888;">No employees found. Add some using the CLI commands below!</p>';
+                const employeeAddresses = data.employees;
+
+                if (employeeAddresses.length === 0) {
+                    listEl.innerHTML = '<p style="text-align: center; color: #888;">No employees found. Add employees using the "Add New Employee" button above!</p>';
+                    btn.disabled = false;
+                    btn.innerHTML = '🔄 Refresh Employee List';
                     return;
                 }
 
+                // Fetch details for each employee
+                const employeeDetails = await Promise.all(
+                    employeeAddresses.map(async (address) => {
+                        try {
+                            const detailResponse = await fetch(`http://localhost:3000/api/employee/${address}`);
+                            const detailData = await detailResponse.json();
+                            return detailData.success ? detailData.employee : null;
+                        } catch (err) {
+                            console.error(`Error fetching details for ${address}:`, err);
+                            return null;
+                        }
+                    })
+                );
+
+                // Filter out nulls
+                const employees = employeeDetails.filter(e => e !== null);
+
                 // Display employees
-                let html = '<div style="margin-bottom: 15px; padding: 10px; background: #f0f9ff; border-radius: 8px;"><strong>Total Employees:</strong> ' + employees.length + ' | <strong>Monthly Payroll:</strong> ' + employees.reduce((sum, e) => sum + e.monthlySalary, 0) + ' XLM</div>';
+                let totalMonthly = 0;
+                let html = '';
                 
                 for (const emp of employees) {
+                    const monthlyXLM = (emp.base_salary / 10000000 / 12).toFixed(2);
+                    const annualXLM = (emp.base_salary / 10000000).toFixed(2);
+                    totalMonthly += parseFloat(monthlyXLM);
+
                     html += `
                         <div class="transaction-card">
                             <div class="tx-header">
                                 <span class="tx-type">👤 ${emp.name.toUpperCase()}</span>
-                                <span class="tx-time">${emp.monthlySalary} XLM/month</span>
+                                <span class="tx-time">${monthlyXLM} XLM/month</span>
                             </div>
                             <div>
                                 <strong>Address:</strong><br>
@@ -1038,9 +1048,11 @@ stellar contract invoke \
                                    class="tx-hash">${emp.address}</a>
                             </div>
                             <div class="tx-details">
-                                <div><strong>Annual Salary:</strong> ${emp.annualSalary} XLM</div>
-                                <div><strong>Monthly Salary:</strong> ${emp.monthlySalary} XLM</div>
-                                <div><strong>Status:</strong> ✅ Active</div>
+                                <div><strong>Annual Salary:</strong> ${annualXLM} XLM</div>
+                                <div><strong>Monthly Salary:</strong> ${monthlyXLM} XLM</div>
+                                <div><strong>Status:</strong> ${emp.is_active ? '✅ Active' : '⏸️ Paused'}</div>
+                                <div><strong>Start Date:</strong> ${emp.start_year}/${emp.start_month}</div>
+                                <div><strong>Last Payment:</strong> ${emp.last_payment_year}/${emp.last_payment_month}</div>
                             </div>
                             <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
                                 <button onclick="copyToClipboard('${emp.address}')" style="padding: 5px 10px; font-size: 0.85em; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -1054,23 +1066,39 @@ stellar contract invoke \
                     `;
                 }
 
-                listEl.innerHTML = html;
-                showAlert('success', `Loaded ${employees.length} employees`);
+                // Prepend summary
+                const summaryHtml = `
+                    <div style="margin-bottom: 15px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <strong>📊 Employee Summary</strong><br>
+                        <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div><strong>Total Employees:</strong> ${employees.length}</div>
+                            <div><strong>Active:</strong> ${employees.filter(e => e.is_active).length}</div>
+                            <div><strong>Monthly Payroll:</strong> ${totalMonthly.toFixed(2)} XLM</div>
+                            <div><strong>Annual Payroll:</strong> ${(totalMonthly * 12).toFixed(2)} XLM</div>
+                        </div>
+                    </div>
+                `;
+
+                listEl.innerHTML = summaryHtml + html;
+                showAlert('success', `✅ Loaded ${employees.length} employees from blockchain`);
 
             } catch (error) {
                 console.error('Error loading employees:', error);
+                showAlert('error', `❌ Failed to load employees: ${error.message}`);
                 listEl.innerHTML = `
-                    <div style="padding: 20px; background: #fee; border-radius: 8px; color: #c00;">
-                        <strong>Note:</strong> Employee list is shown from the last known state.<br>
-                        To get real-time data, use the CLI command:<br><br>
-                        <code style="background: white; padding: 5px; border-radius: 4px; display: block; margin-top: 10px;">
-                        stellar contract invoke --id salary_system --source-account alice --network testnet -- get_all_employees
-                        </code>
+                    <div style="padding: 20px; background: #fee2e2; border-radius: 8px; color: #991b1b; border: 1px solid #fecaca;">
+                        <strong>⚠️ Error Loading Employees</strong><br>
+                        <p>${error.message}</p>
+                        <p style="margin-top: 10px;">
+                            <button onclick="loadEmployees()" style="padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                🔄 Try Again
+                            </button>
+                        </p>
                     </div>
                 `;
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '🔄 Reload Employees';
+                btn.innerHTML = '🔄 Refresh Employee List';
             }
         }
 
@@ -1090,15 +1118,43 @@ stellar contract invoke \
             
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Loading...';
-            infoEl.innerHTML = '<p style="text-align: center; color: #888;">Calculating treasury information...</p>';
+            infoEl.innerHTML = '<p style="text-align: center; color: #888;">Fetching treasury data from blockchain...</p>';
 
             try {
-                showAlert('info', 'Use CLI to get real-time data: stellar contract invoke --id salary_system --source-account alice --network testnet -- get_treasury_balance');
+                // Fetch treasury balance from backend API
+                const treasuryResponse = await fetch('http://localhost:3000/api/treasury-balance');
+                const treasuryData = await treasuryResponse.json();
                 
-                // Simulated data - In production, this would call the contract via CLI or SDK
-                const treasuryBalance = 296; // XLM (from our last test)
-                const monthlyPayroll = 6; // XLM (1 + 2 + 3)
-                const annualPayroll = monthlyPayroll * 12; // 72 XLM
+                if (!treasuryData.success) {
+                    throw new Error(treasuryData.error || 'Failed to fetch treasury balance');
+                }
+                
+                const treasuryBalance = parseFloat(treasuryData.balanceXLM);
+                
+                // Fetch employees to calculate payroll
+                const employeesResponse = await fetch('http://localhost:3000/api/employees');
+                const employeesData = await employeesResponse.json();
+                
+                if (!employeesData.success) {
+                    throw new Error(employeesData.error || 'Failed to fetch employees');
+                }
+                
+                // Fetch details for each employee to calculate total payroll
+                let monthlyPayroll = 0;
+                for (const address of employeesData.employees) {
+                    try {
+                        const detailResponse = await fetch(`http://localhost:3000/api/employee/${address}`);
+                        const detailData = await detailResponse.json();
+                        if (detailData.success && detailData.employee.is_active) {
+                            const monthlyXLM = detailData.employee.base_salary / 10000000 / 12;
+                            monthlyPayroll += monthlyXLM;
+                        }
+                    } catch (err) {
+                        console.error(`Error fetching employee ${address}:`, err);
+                    }
+                }
+                
+                const annualPayroll = monthlyPayroll * 12;
                 
                 // Calculate actual sustainability with 5% compound increments
                 let balance = treasuryBalance;
@@ -1217,25 +1273,25 @@ stellar contract invoke \
                 `;
 
                 infoEl.innerHTML = html;
-                showAlert('success', 'Treasury analysis complete!');
+                showAlert('success', `✅ Treasury data loaded from blockchain! Balance: ${treasuryBalance.toFixed(2)} XLM`);
 
             } catch (error) {
                 console.error('Error loading treasury info:', error);
+                showAlert('error', `❌ Failed to load treasury: ${error.message}`);
                 infoEl.innerHTML = `
-                    <div style="padding: 20px; background: #fee; border-radius: 8px; color: #c00;">
-                        <strong>Note:</strong> Treasury information shown is from last known state.<br>
-                        To get real-time data, use the CLI commands:<br><br>
-                        <code style="background: white; padding: 5px; border-radius: 4px; display: block; margin: 10px 0;">
-                        stellar contract invoke --id salary_system --source-account alice --network testnet -- get_treasury_balance
-                        </code>
-                        <code style="background: white; padding: 5px; border-radius: 4px; display: block; margin: 10px 0;">
-                        stellar contract invoke --id salary_system --source-account alice --network testnet -- calculate_sustainability_years
-                        </code>
+                    <div style="padding: 20px; background: #fee2e2; border-radius: 8px; color: #991b1b; border: 1px solid #fecaca;">
+                        <strong>⚠️ Error Loading Treasury Data</strong><br>
+                        <p>${error.message}</p>
+                        <p style="margin-top: 10px;">
+                            <button onclick="loadTreasuryInfo()" style="padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                🔄 Try Again
+                            </button>
+                        </p>
                     </div>
                 `;
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '🔄 Reload Treasury Info';
+                btn.innerHTML = '🔄 Refresh Treasury Info';
             }
         }
 
@@ -2022,6 +2078,10 @@ stellar contract invoke \
 
         // Check for Freighter on load
         window.onload = function() {
+            // Load employees and treasury automatically on page load
+            loadEmployees();
+            loadTreasuryInfo();
+            
             if (window.freighterApi) {
                 showAlert('info', 'Freighter detected! Click "Connect Freighter" to get started.');
             } else {
