@@ -13,6 +13,22 @@ const path = require('path');
 
 const execAsync = promisify(exec);
 
+// Helper function to check if stderr contains actual errors
+// Stellar CLI outputs informational messages to stderr that aren't errors
+function isActualError(stderr) {
+    if (!stderr) return false;
+    
+    // These are informational messages, not errors
+    const infoPatterns = [
+        'Simulation',
+        'Send by',
+        'Signing transaction:',
+        'ℹ️'
+    ];
+    
+    return !infoPatterns.some(pattern => stderr.includes(pattern));
+}
+
 const app = express();
 const PORT = 3000;
 
@@ -81,7 +97,7 @@ app.post('/api/add-employee', async (req, res) => {
 
         const { stdout, stderr } = await execAsync(command);
 
-        if (stderr && !stderr.includes('Simulation') && !stderr.includes('Send by')) {
+        if (isActualError(stderr)) {
             console.error('Error:', stderr);
             return res.status(500).json({
                 success: false,
@@ -326,7 +342,7 @@ app.post('/api/fund-treasury', async (req, res) => {
 
         const { stdout, stderr } = await execAsync(command);
 
-        if (stderr && !stderr.includes('Simulation') && !stderr.includes('Send by')) {
+        if (isActualError(stderr)) {
             console.error('Error:', stderr);
             return res.status(500).json({
                 success: false,
@@ -392,7 +408,7 @@ app.post('/api/stop-employee-salary', async (req, res) => {
 
         const { stdout, stderr } = await execAsync(command);
 
-        if (stderr && !stderr.includes('Simulation') && !stderr.includes('Send by')) {
+        if (isActualError(stderr)) {
             console.error('Error:', stderr);
             return res.status(500).json({
                 success: false,
@@ -456,7 +472,7 @@ app.post('/api/resume-employee-salary', async (req, res) => {
 
         const { stdout, stderr } = await execAsync(command);
 
-        if (stderr && !stderr.includes('Simulation') && !stderr.includes('Send by')) {
+        if (isActualError(stderr)) {
             console.error('Error:', stderr);
             return res.status(500).json({
                 success: false,
@@ -522,7 +538,7 @@ app.post('/api/claim-salary', async (req, res) => {
 
         const { stdout, stderr } = await execAsync(command);
 
-        if (stderr && !stderr.includes('Simulation') && !stderr.includes('Send by')) {
+        if (isActualError(stderr)) {
             console.error('Error:', stderr);
             return res.status(500).json({
                 success: false,

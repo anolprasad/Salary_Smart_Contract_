@@ -71,18 +71,6 @@ stellar contract invoke \
   --admin <ADMIN_ADDRESS>
 ```
 
-### 4. Use Helper Scripts
-```bash
-# Add an employee (creates account + adds to contract)
-./add_employee.sh employee_name monthly_salary_xlm
-
-# Pay all employees
-./pay_all_salaries.sh
-
-# Check treasury sustainability
-./check_sustainability.sh
-```
-
 ## 📊 Current Deployment Status
 
 ### 🔗 Contract Information
