@@ -5,9 +5,13 @@
 > <img width="2882" height="1476" alt="image" src="https://github.com/user-attachments/assets/757cb759-9c0d-4f07-9ba8-c0d942648563" />
 
 > [View on Stellar Expert →](https://stellar.expert/explorer/testnet/contract/CDXYPMRADZYRBUI2GNYICZBS7H6GJLX7BI3DI4HCUG2YISRR3NTLL4R4)
-
 A complete decentralized salary management system built on Stellar's Soroban platform with monthly payments, annual increments, treasury management, and employee self-service withdrawals.
-
+## Anyone can now clone your repo and run:
+git clone https://github.com/anolprasad/Salary_Smart_Contract_.git
+cd Salary_Smart_Contract_
+npm install
+node backend_server.js
+Then access: http://localhost:3000
 ## Instructions are there in the html file
 ## 🌟 Features
 
