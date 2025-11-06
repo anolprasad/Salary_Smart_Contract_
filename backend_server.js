@@ -267,23 +267,56 @@ app.post('/api/pay-all-salaries', async (req, res) => {
                 console.log(`✅ Paid salary to ${employeeAddress.substring(0, 10)}...`);
 
             } catch (payError) {
+                // Parse error message to provide helpful feedback
+                let errorMessage = payError.message;
+                let errorType = 'unknown';
+                
+                if (errorMessage.includes('account entry is missing')) {
+                    errorType = 'account_not_found';
+                    errorMessage = 'Account does not exist on Stellar testnet. Fund this address with XLM first.';
+                } else if (errorMessage.includes('Salary already paid for this month')) {
+                    errorType = 'already_paid';
+                    errorMessage = 'Salary already paid for this month';
+                } else if (errorMessage.includes('Employee is not active')) {
+                    errorType = 'inactive';
+                    errorMessage = 'Employee is not active (paused)';
+                } else if (errorMessage.includes('Insufficient treasury balance')) {
+                    errorType = 'insufficient_funds';
+                    errorMessage = 'Insufficient treasury balance';
+                } else if (errorMessage.includes('UnreachableCodeReached')) {
+                    errorType = 'contract_error';
+                    errorMessage = 'Smart contract execution error (possible inactive employee or already paid)';
+                }
+                
                 results.push({
                     address: employeeAddress,
                     status: 'failed',
-                    error: payError.message
+                    error: errorMessage,
+                    errorType: errorType
                 });
                 failCount++;
-                console.error(`❌ Failed to pay ${employeeAddress.substring(0, 10)}...: ${payError.message}`);
+                console.error(`❌ ${employeeAddress.substring(0, 15)}...${employeeAddress.substring(50)}: ${errorMessage}`);
             }
         }
 
+        // Add helpful message if there were account-not-found errors
+        let helpMessage = '';
+        const accountNotFoundCount = results.filter(r => r.errorType === 'account_not_found').length;
+        if (accountNotFoundCount > 0) {
+            helpMessage = `${accountNotFoundCount} employee account(s) don't exist on Stellar testnet. Fund them at https://laboratory.stellar.org/#account-creator?network=test or use "Stop Employee Salary" to mark them as inactive.`;
+        }
+
         res.json({
-            success: true,
-            message: `Paid salaries to ${successCount} out of ${employees.length} employees`,
+            success: successCount > 0 || failCount === 0,
+            message: successCount > 0 ? 
+                `Paid salaries to ${successCount} out of ${employees.length} employees` :
+                `Failed to pay any employees (${failCount} failures)`,
+            helpMessage: helpMessage,
             summary: {
                 total: employees.length,
                 successful: successCount,
-                failed: failCount
+                failed: failCount,
+                accountNotFound: accountNotFoundCount
             },
             details: results
         });
