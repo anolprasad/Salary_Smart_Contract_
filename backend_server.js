@@ -62,20 +62,22 @@ app.post('/api/add-employee', async (req, res) => {
             });
         }
 
-        // Convert XLM to stroops (1 XLM = 10,000,000 stroops)
-        const monthlyStroops = Math.floor(salary * 10_000_000);
+        // Convert monthly XLM to annual base salary in stroops
+        // Monthly XLM * 12 months * 10,000,000 stroops per XLM
+        const annualStroops = Math.floor(salary * 12 * 10_000_000);
 
-        console.log(`Adding employee: ${name} (${address}) with ${monthlyXLM} XLM/month (${monthlyStroops} stroops)`);
+        console.log(`Adding employee: ${name} (${address}) with ${monthlyXLM} XLM/month (${annualStroops} stroops annual base salary)`);
 
         // Execute Stellar CLI command
+        // Note: Contract expects 'name' (not 'employee_name') and 'base_salary' (annual, not monthly)
         const command = `stellar contract invoke \
   --id ${CONTRACT_ID} \
   --source ${ADMIN_ACCOUNT} \
   --network ${NETWORK} \
   -- add_employee \
-  --employee_name "${name}" \
   --employee_address "${address}" \
-  --monthly_salary_stroops "${monthlyStroops}"`;
+  --name "${name}" \
+  --base_salary "${annualStroops}"`;
 
         const { stdout, stderr } = await execAsync(command);
 
@@ -98,7 +100,8 @@ app.post('/api/add-employee', async (req, res) => {
                 name,
                 address,
                 monthlyXLM: monthlyXLM,
-                monthlyStroops: monthlyStroops
+                annualStroops: annualStroops,
+                note: 'Annual base salary set (will increase 5% compound each year)'
             },
             output: stdout
         });
